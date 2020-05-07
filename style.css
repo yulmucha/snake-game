@@ -1,0 +1,10 @@
+body {
+    background-color: azure;
+}
+
+canvas {
+    background-color: white;
+    box-shadow: 0 4px 10px rgba(50, 50, 93, 0.4);
+    display: block;
+    margin: auto;
+}
