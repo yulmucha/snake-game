@@ -11,6 +11,8 @@ const KEY_UP = 38;
 
 const HEAD_WIDTH = 15;
 const HEAD_HEIGHT = 15;
+const FOOD_WIDTH = 5;
+const FOOD_HEIGHT = 5;
 
 const EAST = 'E';
 const WEST = 'W';
@@ -74,20 +76,63 @@ function moveSnake(snake) {
 
 function draw(snake, foods) {
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    for (let [foodCoord, bool] of foods) {
-        if (bool) {
-            const [x, y] = foodCoord.split(",").map(x => parseInt(x));
-            ctx.fillRect(x, y, 5, 5);
+    for (let { x, y, isActive } of foods) {
+        if (isActive) {
+            ctx.fillRect(x, y, FOOD_WIDTH, FOOD_HEIGHT);
         }
     }
     ctx.fillRect(snake.x, snake.y, HEAD_WIDTH, HEAD_HEIGHT);
 }
 
+function checkCollision(snake, foods) {
+    for (const food of foods) {
+        if (food.isActive) {
+            if (food.x <= snake.x) {
+                if (food.y <= snake.y) {
+                    if ((snake.x - food.x >= FOOD_WIDTH)
+                        || (snake.y - food.y >= FOOD_HEIGHT)) {
+                        continue;
+                    }
+                } else {
+                    if ((snake.x - food.x >= FOOD_WIDTH)
+                        || (food.y - snake.y >= HEAD_HEIGHT)) {
+                        continue;
+                    }
+                }
+            } else {
+                if (food.y <= snake.y) {
+                    if ((food.x - snake.x >= HEAD_WIDTH)
+                        || (snake.y - food.y >= FOOD_HEIGHT)) {
+                        continue;
+                    }
+                } else {
+                    if ((food.x - snake.x >= HEAD_WIDTH)
+                        || (food.y - snake.y >= HEAD_HEIGHT)) {
+                        continue;
+                    }
+                }
+            }
+            // console.log("snake", snake.x, snake.y);
+            // console.log("food", foodX, foodY);
+            // console.log("Collision!");
+            food.isActive = false;
+        }
+    }
+}
+
 function init() {
-    const foods = new Map();
+    const foods = new Array(500);
+    for (let i = 0; i < foods.length; i++) {
+        foods[i] = {
+            x: 0,
+            y: 0,
+            isActive: false
+        };
+    }
     const snake = new Snake();
 
     setInterval(() => {
+        checkCollision(snake, foods);
         draw(snake, foods);
     }, 1);
 
@@ -96,21 +141,26 @@ function init() {
             clearInterval(foodCreation);
             return;
         }
-        const x = Math.ceil(Math.random() * CANVAS_WIDTH);
-        const y = Math.ceil(Math.random() * CANVAS_HEIGHT);
-        foods.set(String([x, y]), true);
+
+        for (const food of foods) {
+            if (!food.isActive) {
+                food.x = Math.ceil(Math.random() * (CANVAS_WIDTH - FOOD_WIDTH));
+                food.y = Math.ceil(Math.random() * (CANVAS_HEIGHT - FOOD_HEIGHT));
+                food.isActive = true;
+                break;
+            }
+        }
     }, 1000);
 
 
     window.addEventListener("keydown", event => { handleKeyDown(event, snake) });
     const move = setInterval(() => {
         moveSnake(snake);
-
         if (snake.x < 0 || snake.y < 0
             || snake.x + HEAD_WIDTH > CANVAS_WIDTH
             || snake.y + HEAD_HEIGHT > CANVAS_HEIGHT) {
-                gameOver = true;
-                clearInterval(move);
+            gameOver = true;
+            clearInterval(move);
         }
     }, 10);
 }
