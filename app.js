@@ -1,6 +1,9 @@
 const canvas = document.querySelector(".js-canvas");
 const ctx = canvas.getContext('2d');
 
+const CANVAS_WIDTH = canvas.getBoundingClientRect().width;
+const CANVAS_HEIGHT = canvas.getBoundingClientRect().height;
+
 const KEY_RIGHT = 39;
 const KEY_LEFT = 37;
 const KEY_DOWN = 40;
@@ -14,11 +17,12 @@ const WEST = 'W';
 const SOUTH = 'S';
 const NORTH = 'N';
 
+let gameOver = false;
+
 class Snake {
     constructor() {
-        const { width, height } = canvas.getBoundingClientRect();
-        this.x = width / 2
-        this.y = height / 2;
+        this.x = CANVAS_WIDTH / 2
+        this.y = CANVAS_HEIGHT / 2;
         this.direction = WEST;
         this.tail = [];
     }
@@ -66,19 +70,47 @@ function moveSnake(snake) {
             break;
         default:
     }
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function draw(snake, foods) {
+    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    for (let [foodCoord, bool] of foods) {
+        if (bool) {
+            const [x, y] = foodCoord.split(",").map(x => parseInt(x));
+            ctx.fillRect(x, y, 5, 5);
+        }
+    }
     ctx.fillRect(snake.x, snake.y, HEAD_WIDTH, HEAD_HEIGHT);
 }
 
 function init() {
+    const foods = new Map();
     const snake = new Snake();
+
+    setInterval(() => {
+        draw(snake, foods);
+    }, 1);
+
+    const foodCreation = setInterval(() => {
+        if (gameOver) {
+            clearInterval(foodCreation);
+            return;
+        }
+        const x = Math.ceil(Math.random() * CANVAS_WIDTH);
+        const y = Math.ceil(Math.random() * CANVAS_HEIGHT);
+        foods.set(String([x, y]), true);
+    }, 1000);
+
+
     window.addEventListener("keydown", event => { handleKeyDown(event, snake) });
-    let move = setInterval(() => {
+    const move = setInterval(() => {
         moveSnake(snake);
+
         if (snake.x < 0 || snake.y < 0
-            || snake.x + HEAD_WIDTH > canvas.width
-            || snake.y + HEAD_HEIGHT > canvas.height) {
-            clearInterval(move);
+            || snake.x + HEAD_WIDTH > CANVAS_WIDTH
+            || snake.y + HEAD_HEIGHT > CANVAS_HEIGHT) {
+                gameOver = true;
+                clearInterval(move);
         }
     }, 10);
 }
